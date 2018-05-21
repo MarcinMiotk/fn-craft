@@ -22,24 +22,27 @@ public class CurryingWithImmutableContextTest {
         pairs
                 .stream()
                 .map(Subjects::joinSubjects)
+                .map(SubjectsCombined::concatenate)
                 .collect(
-                        FnsCollector<ImmutableContext, Subject>::new,
+                        FnsCollector<ImmutableContext, String>::new,
                         FnsCollector::accumulator,
-                        FnsCollector::<ImmutableContext, Subject>combiner
+                        FnsCollector::<ImmutableContext, String>combiner
                 )
                 .useContext(new ImmutableContext("[", "]", 0))
         .apply((context, subjects) -> {
-
             System.out.println("SUMMARY: "+context.getCounter());
-
-            subjects.stream().forEach(s->{
-                System.out.println(s.getName()+" # "+s.getWeight());
-            });
-
-
-
+            subjects.stream().forEach(System.out::println);
             return true;
         });
+    }
+
+
+    static class SubjectsCombined {
+
+        static Function<ImmutableContext, Tuple2<ImmutableContext, String>> concatenate(Function<ImmutableContext, Tuple2<ImmutableContext, Subject>> src) {
+            return context -> src.apply(context).apply((ctx, subject) -> Tuple.of(ctx, subject.getName()+"=>"+subject.getWeight()));
+        }
+
     }
 
 
