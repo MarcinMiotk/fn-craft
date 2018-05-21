@@ -6,9 +6,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class CurryingWithImmutableContextTest {
 
@@ -25,9 +23,9 @@ public class CurryingWithImmutableContextTest {
                 .stream()
                 .map(Subjects::joinSubjects)
                 .collect(
-                        FnsCollector::new,
+                        FnsCollector<ImmutableContext, Subject>::new,
                         FnsCollector::accumulator,
-                        FnsCollector::combiner
+                        FnsCollector::<ImmutableContext, Subject>combiner
                 )
                 .useContext(new ImmutableContext("[", "]", 0))
         .apply((context, subjects) -> {
@@ -44,40 +42,6 @@ public class CurryingWithImmutableContextTest {
         });
     }
 
-
-    static class FnsCollector {
-        static FnsCollector build() {
-            return new FnsCollector();
-        }
-
-        static void accumulator(
-                FnsCollector supplier,
-                Function<ImmutableContext, Tuple2<ImmutableContext, Subject>> fn
-        ) {
-            supplier.add(fn);
-        }
-
-        static void combiner(FnsCollector a, FnsCollector b) {
-
-        }
-
-        private final List<Function<ImmutableContext, Tuple2<ImmutableContext, Subject>>> fns = new ArrayList<>();
-
-        void add(Function<ImmutableContext, Tuple2<ImmutableContext, Subject>> it) {
-            fns.add(it);
-        }
-
-        Tuple2<ImmutableContext, List<Subject>> useContext(ImmutableContext context) {
-            final AtomicReference<ImmutableContext> ref = new AtomicReference<>(context);
-            final List<Subject> subjects = fns
-                    .stream()
-                    .map(fn->fn.apply(ref.get()))
-                    .peek(ctx->ref.set(ctx._1))
-                    .map(Tuple2::_2)
-                    .collect(Collectors.toList());
-            return Tuple.of(ref.get(), subjects);
-        }
-    }
 
     static class Subjects {
 
